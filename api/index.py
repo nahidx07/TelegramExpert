@@ -3,13 +3,14 @@ import telebot
 import google.generativeai as genai
 import os
 
-# API Keys (Vercel Settings থেকে আসবে)
+# API Keys (Vercel Environment Variables থেকে আসবে)
 TOKEN = os.environ.get('TELEGRAM_TOKEN')
 API_KEY = os.environ.get('GEMINI_KEY')
 
-# AI Setup - আমরা gemini-pro ব্যবহার করছি যা সব রিজিয়নে কাজ করে
+# AI Setup - 'gemini-1.5-flash-latest' অথবা 'gemini-pro' ব্যবহার করুন
 genai.configure(api_key=API_KEY)
-model = genai.GenerativeModel('gemini-pro')
+# মডেল নাম আপডেট করা হয়েছে
+model = genai.GenerativeModel('gemini-1.5-flash-latest')
 
 app = Flask(__name__)
 bot = telebot.TeleBot(TOKEN, threaded=False)
@@ -29,20 +30,30 @@ def webhook():
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    bot.send_message(message.chat.id, "হ্যালো! আমি Python Expert AI। আপনার প্রশ্নটি এখানে লিখুন।")
+    bot.send_message(message.chat.id, "হ্যালো! আমি Python Expert AI। আপনার পাইথন কোড বা প্রশ্নটি এখানে লিখুন।")
 
 @bot.message_handler(func=lambda message: True)
 def ai_reply(message):
+    chat_id = message.chat.id
+    user_text = message.text
+
     try:
         # AI জেনারেশন
-        prompt = f"You are a professional Python expert. Help the user: {message.text}"
+        prompt = f"You are a professional Python expert. Provide solution for: {user_text}"
         response = model.generate_content(prompt)
         
-        # রিপ্লাই দেওয়ার বদলে সরাসরি মেসেজ পাঠানো (Vercel এর জন্য নিরাপদ)
-        bot.send_message(message.chat.id, response.text)
+        # 'reply_to' এর বদলে সরাসরি 'send_message' ব্যবহার করা নিরাপদ
+        bot.send_message(chat_id, response.text)
+        
     except Exception as e:
         print(f"Error: {e}")
-        bot.send_message(message.chat.id, "দুঃখিত, আমি বর্তমানে উত্তর দিতে পারছি না। আপনার API Key চেক করুন।")
+        # যদি gemini-1.5-flash কাজ না করে তবে ব্যাকআপ হিসেবে gemini-pro ট্রাই করা
+        try:
+            backup_model = genai.GenerativeModel('gemini-pro')
+            response = backup_model.generate_content(user_text)
+            bot.send_message(chat_id, response.text)
+        except:
+            bot.send_message(chat_id, "দুঃখিত, এআই মডেলটি এই মুহূর্তে রেসপন্স করছে না। দয়া করে আপনার Gemini API Key চেক করুন।")
 
 # Vercel handler
 def handler(request):
