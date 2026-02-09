@@ -4,8 +4,8 @@ import google.generativeai as genai
 import os
 
 # আপনার API Key গুলো এখানে দিন (অথবা Vercel Environment Variables এ সেট করুন)
-TELEGRAM_TOKEN = "8440131215:AAGSVHHWs25sehMnz7fyh8PCbVfAdRkBSdk"
-GEMINI_KEY = "AIzaSyBRf9gTZzt6W4R9GNfc6NU91NpNnCaVVyE"
+TELEGRAM_TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"
+GEMINI_KEY = "YOUR_GEMINI_API_KEY"
 
 # AI কনফিগারেশন
 genai.configure(api_key=GEMINI_KEY)
@@ -46,4 +46,4 @@ def handle_ai_request(message):
 # Vercel এর জন্য অ্যাপ এক্সপোর্ট
 def handler(request):
     return app(request)
-  
+    
