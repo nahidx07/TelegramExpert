@@ -3,11 +3,10 @@ import telebot
 import google.generativeai as genai
 import os
 
-# আপনার API Key গুলো এখানে দিন (অথবা Vercel Environment Variables এ সেট করুন)
-TELEGRAM_TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"
-GEMINI_KEY = "YOUR_GEMINI_API_KEY"
+# API Keys (Vercel Settings থেকে দেওয়া ভালো, অথবা এখানে সরাসরি দিন)
+TELEGRAM_TOKEN = "8440131215:AAGSVHHWs25sehMnz7fyh8PCbVfAdRkBSdk"
+GEMINI_KEY = "AIzaSyBRf9gTZzt6W4R9GNfc6NU91NpNnCaVVyE"
 
-# AI কনফিগারেশন
 genai.configure(api_key=GEMINI_KEY)
 model = genai.GenerativeModel('gemini-1.5-flash')
 
@@ -16,34 +15,34 @@ app = Flask(__name__)
 
 @app.route('/', methods=['GET'])
 def index():
-    return "Python Expert Bot is Running!"
+    return "Python Expert Bot is Alive!"
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
     if request.headers.get('content-type') == 'application/json':
         json_string = request.get_data().decode('utf-8')
         update = telebot.types.Update.de_json(json_string)
+        # এখানে আপডেট হ্যান্ডেল করা হচ্ছে
         bot.process_new_updates([update])
-        return ''
+        return 'OK', 200
     else:
         return 'Invalid Request', 403
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    bot.reply_to(message, "স্বাগতম! আমি Python Expert AI। আপনার কোডিং সমস্যাটি এখানে লিখুন।")
+    bot.reply_to(message, "স্বাগতম! আমি Python Expert AI। আপনার কোড বা প্রশ্নটি লিখুন।")
 
 @bot.message_handler(func=lambda message: True)
 def handle_ai_request(message):
-    user_query = message.text
     try:
-        # AI জেনারেশন
-        prompt = f"You are a Python Expert. Professional coding assistant. Query: {user_query}"
+        prompt = f"You are a professional Python expert. Provide clean code or explanation for: {message.text}"
         response = model.generate_content(prompt)
-        bot.reply_to(message, response.text, parse_mode="Markdown")
+        bot.reply_to(message, response.text)
     except Exception as e:
-        bot.reply_to(message, "দুঃখিত, একটু সমস্যা হয়েছে। আবার চেষ্টা করুন।")
+        print(f"Error: {e}")
+        bot.reply_to(message, "AI এখন উত্তর দিতে পারছে না। পরে চেষ্টা করুন।")
 
-# Vercel এর জন্য অ্যাপ এক্সপোর্ট
+# Vercel এর জন্য এক্সপোর্ট
 def handler(request):
     return app(request)
     
