@@ -3,21 +3,20 @@ import telebot
 import google.generativeai as genai
 import os
 
-# API Keys
-# মনে করে Vercel Settings > Environment Variables এ এগুলো দিয়ে দেবেন
-TOKEN = os.environ.get('TELEGRAM_TOKEN', 'YOUR_TOKEN_HERE')
-API_KEY = os.environ.get('GEMINI_KEY', 'YOUR_KEY_HERE')
+# API Keys (Vercel Settings থেকে আসবে)
+TOKEN = os.environ.get('TELEGRAM_TOKEN')
+API_KEY = os.environ.get('GEMINI_KEY')
 
-# AI Setup
+# AI Setup - আমরা gemini-pro ব্যবহার করছি যা সব রিজিয়নে কাজ করে
 genai.configure(api_key=API_KEY)
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel('gemini-pro')
 
 app = Flask(__name__)
 bot = telebot.TeleBot(TOKEN, threaded=False)
 
 @app.route('/')
 def home():
-    return "Python Expert AI is running!"
+    return "Python Expert AI is online!"
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
@@ -30,16 +29,22 @@ def webhook():
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    bot.reply_to(message, "হ্যালো! আমি Python Expert AI। আপনার কোড বা প্রশ্নটি এখানে লিখুন।")
+    bot.send_message(message.chat.id, "হ্যালো! আমি Python Expert AI। আপনার প্রশ্নটি এখানে লিখুন।")
 
 @bot.message_handler(func=lambda message: True)
 def ai_reply(message):
     try:
-        response = model.generate_content(f"You are a Python expert. Answer this: {message.text}")
-        bot.reply_to(message, response.text)
+        # AI জেনারেশন
+        prompt = f"You are a professional Python expert. Help the user: {message.text}"
+        response = model.generate_content(prompt)
+        
+        # রিপ্লাই দেওয়ার বদলে সরাসরি মেসেজ পাঠানো (Vercel এর জন্য নিরাপদ)
+        bot.send_message(message.chat.id, response.text)
     except Exception as e:
-        bot.reply_to(message, "দুঃখিত, এখন উত্তর দিতে পারছি না।")
+        print(f"Error: {e}")
+        bot.send_message(message.chat.id, "দুঃখিত, আমি বর্তমানে উত্তর দিতে পারছি না। আপনার API Key চেক করুন।")
 
-# Vercel এর জন্য একদম সঠিক হ্যান্ডেলার পদ্ধতি
-# এই অংশটুকু কোনো ফংশনের ভেতরে দেবেন না, একদম নিচে থাকবে।
-app.debug = False
+# Vercel handler
+def handler(request):
+    return app(request)
+    
